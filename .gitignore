@@ -1,0 +1,4 @@
+.vscode/settings.json
+src/__pycache__/box.cpython-39.pyc
+src/__pycache__/detect.cpython-39.pyc
+src/__pycache__/person.cpython-39.pyc
