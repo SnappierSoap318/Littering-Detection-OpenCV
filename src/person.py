@@ -1,5 +1,4 @@
 import cv2
-from box import box
 
 class person:
     def __init__(self, l_hand = (0, 0), r_hand = (0, 0)) -> None:
@@ -24,3 +23,15 @@ def create_person(pose_results):
     r_hand = pose_results.keypoints[0, 9]
     new_person = person(l_hand, r_hand)
     return new_person
+
+class box:
+    def __init__(self, x, y, w, h) -> None:
+        self.x = x
+        self.y = y
+        self.w = w
+        self.h = h
+    
+    def draw(self, frame):
+        box_frame = frame
+        box_frame = cv2.rectangle(box_frame, (int(self.x), int(self.y)), (int(self.w), int(self.h)), (255, 0, 0), 2)
+        return box_frame

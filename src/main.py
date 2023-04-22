@@ -3,10 +3,8 @@
 # Import libraries
 from ultralytics import YOLO
 import cv2
-from person import create_person
-from detect import collision
-from box import box
-
+from person import create_person, box
+from collision_detect import collision
 # Load model
 pose_model = YOLO('./Models/yolov8l-pose.pt')
 trash_model = YOLO('./Models/yolov8m-bobby.pt')
