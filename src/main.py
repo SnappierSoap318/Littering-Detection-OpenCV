@@ -18,7 +18,7 @@ pose_model = YOLO('./Models/yolov8l-pose.pt')
 trash_model = YOLO('./Models/yolov8n-bobby.pt')
 
 # Load video
-cap = cv2.VideoCapture('Littering Dataset/16.mp4')
+cap = cv2.VideoCapture('Littering Dataset/1.mp4')
 
 frame_count = 0
 
