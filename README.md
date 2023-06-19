@@ -2,7 +2,7 @@
 Simple YOLOv8 model to detect if a person is littering
 
 # Prerequesits
-`pip install opencv-python ultralytics`
+`pip install opencv-python ultralytics pysimplegui`
 
 # How to Run
 `python src/main.py`
