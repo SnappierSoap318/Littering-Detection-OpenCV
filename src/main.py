@@ -1,90 +1,81 @@
-# Description: Main file for the project
-
-# Import libraries
-from ultralytics import YOLO
+import PySimpleGUI as sg
+from gui import create_gui, update_gui
 import cv2
-from person import create_person, box
+from ObjectDet import ObjectDetection
 
 
-#collision detection between 2 boxes 
+def main():
+
+    filename = sg.popup_get_file('Filename to play')
+    if filename is None:
+        return
+
+    vidFile = cv2.VideoCapture(filename)
+    num_frames = vidFile.get(cv2.CAP_PROP_FRAME_COUNT)
+    fps = vidFile.get(cv2.CAP_PROP_FPS)
+
+    window = create_gui(num_frames)
+
+    timeout = int(1000/fps)
+
+    slider_elem = window['-SLIDER-']
+
+    cur_frame = 0
+
+    while vidFile.isOpened():
+        event, values = window.read(timeout=timeout)
+
+        if event in ['Exit', None, sg.WINDOW_CLOSED]:
+            break
+
+        od = ObjectDetection()
+
+        ret, frame = vidFile.read()
+        if not ret:
+            break
+
+        if int(values['-SLIDER-']) != cur_frame-1:
+            cur_frame = int(values['-SLIDER-'])
+            vidFile.set(cv2.CAP_PROP_POS_FRAMES, cur_frame)
+        slider_elem.update(cur_frame)
+        cur_frame += 1
+
+        # Detect objects
+        pose_results, trash_results, plate_frame = od.detect(frame)
+
+        persons = pose_results[1]
+        trash_frame, boxes = trash_results
+
+        for i in persons:
+            i.draw_box(trash_frame)
+
+        update_gui(window, frame, trash_frame, pose_results[0], plate_frame)
+
+        # Check for collision
+        if persons and boxes:
+            for person in persons:
+                if collision(person.l_box, boxes) or collision(person.r_box, boxes):
+                    print('Trash in hand!')
+                    flag = 0
+                else:
+                    flag = 1
+                    print('No trash in hand')
+                    # Save frame to folder
+                    cv2.imwrite('defaulters_screenshot/frame_%03d.jpg' %
+                                cur_frame, frame)
+
+        if flag == 1:
+            break
+
+    window.close()
+
+
 def collision(box1, box2):
     if box1.x < box2.w and box1.w > box2.x and box1.y < box2.h and box1.h > box2.y:
         return True
     else:
         return False
 
-# Load model
-pose_model = YOLO('./Models/yolov8l-pose.pt')
-trash_model = YOLO('./Models/yolov8n-bobby.pt')
 
-# Load video
-cap = cv2.VideoCapture('Littering Dataset/1.mp4')
-
-frame_count = 0
-
-while True:
-    # Read frame
-    ret, frame = cap.read()
-    if not ret:
-        break
-
-    boxes = box(0, 0, 0, 0)
-
-    # Detect pose
-    pose_results = pose_model(frame, stream=True)
-    
-    # Detect trash
-    trash_results = trash_model(frame, stream=True)
-
-    # Display results
-    for i in pose_results:
-        persons = create_person(i)
-        pose_frame = i.plot()
-
-    for i in trash_results:
-        trash_frame = i.plot()
-        for j, k in enumerate(i.boxes.cls):
-            if k == 2:
-                boxes = i.boxes.data[j]
-                boxes = box(boxes[0], boxes[1], boxes[2], boxes[3])
-                boxes.draw(frame)
-
-    # draw hands
-    for person in persons:
-        person.draw_box(frame)
-
-    # draw boxes
-    frame = cv2.resize(frame, (540, 960))
-    trash_frame = cv2.resize(trash_frame, (540, 960))
-    pose_frame = cv2.resize(pose_frame, (540, 960))
-
-    # Display frame
-    cv2.imshow('frame', frame)
-    cv2.imshow('trash', trash_frame)
-    cv2.imshow('pose', pose_frame)
-
-    # Check for collision
-    for person in persons:
-        if collision(person.l_box, boxes) or collision(person.r_box, boxes):
-            print('Trash in hand!')
-        else:
-            print('No trash in hand')
-            # save frame to folder
-            cv2.imwrite('defaulters_screenshot/frame_%03d.jpg' %
-                        frame_count, frame)
-            
-            cv2.waitKey(0)
-            break
-
-    key = cv2.waitKey(1)
-    # Quit if 'q' is pressed
-    if key == ord('q'):
-        break
-    # Pause if 'p' is pressed
-    if key == ord('p'):
-        cv2.waitKey(0)
-
-    frame_count += 1
-cap.release()
-cv2.destroyAllWindows()
-
+if __name__ == '__main__':
+    main()
